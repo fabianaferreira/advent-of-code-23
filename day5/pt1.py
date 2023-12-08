@@ -22,10 +22,12 @@ def get_category_if_exists(line):
 
 
 def get_dest_value(source_value, ranges):
+    # TODO: we can test intervals in the middle of the ranges, to check
+    # whether we can do an early return for cases where the source_value
+    # is not between neighbor ranges
     for range in ranges:
         if range.source_start <= source_value < range.source_start + range.interval:
             return range.destination_start + source_value - range.source_start
-
     return source_value
 
 
@@ -35,12 +37,13 @@ with open("input.txt", "r") as f:
     seeds = []
     category_map = {}
     need_to_get_ranges_from_category = False
-    current_category = ""
+    current_category = None
     for index, line in enumerate(lines):
         # If we are in the first line, we need to get the
         # seeds numbers
         if index == 0:
             seeds = get_seeds(line)
+            continue
         # If we have a category line, the next lines
         # will be the number mapping, so we have to
         # create an map entry to store those until
@@ -50,10 +53,12 @@ with open("input.txt", "r") as f:
             category_map[category] = category_map.get(category, [])
             need_to_get_ranges_from_category = True
             current_category = category
-            continue
-        if need_to_get_ranges_from_category and line != "\n":
+        elif need_to_get_ranges_from_category and line != "\n":
             category_map[current_category].append(get_range_from_line(line))
-            continue
+        else:
+            if current_category != None:
+              category_map[current_category].sort(key=lambda x: x.source_start)
+
     lowest_location = None
     for seed in seeds:
         current_value = seed
